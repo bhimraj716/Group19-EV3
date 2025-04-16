@@ -15,3 +15,20 @@
 
 ##   2. I have tested the the motorspin as the motor are spinning and workin well
 ![Motorspin](images/motors.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Bhimraj Gurung
+
+## 1. I have connected the UltrasonicSensor and tested to the ev3 and it is working.
+
