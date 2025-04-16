@@ -1,0 +1,8 @@
+{
+    "java.project.sourcePaths": [
+        "src"
+    ],
+    "java.project.referencedLibraries": [
+        "d:\\Webpage\\FirstProject\\Group19-EV3\\lib\\ev3classes.jar"
+    ]
+}

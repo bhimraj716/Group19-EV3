@@ -18,6 +18,7 @@
 
 
 
+<<<<<<< HEAD
 
 
 
@@ -31,4 +32,10 @@
 ## Bhimraj Gurung
 
 ## 1. I have connected the UltrasonicSensor and tested to the ev3 and it is working.
+
+## 2.![Ultrasonic](ultrasonic.png)
+=======
+##   3. This project uses a LEGO EV3 robot to follow a black line on a white surface using its color sensor. The robot constantly reads the reflected light value and adjusts its motors to stay on the path.
+
+  
 
