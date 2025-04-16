@@ -1,0 +1,1 @@
+"C:\Program Files\Java\jdk1.7.0_80\bin\jar" -cfe spin.jar Motorspin.TestMotors ..\lib\ev3classes.jar .\Motorspin
