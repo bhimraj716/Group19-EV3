@@ -11,67 +11,53 @@ import lejos.utility.Delay;
 public class LineFollower {
 
     public static void main(String[] args) {
-
-        // Color sensor setup
+        // Initialize color sensor on port S4 in red mode
         EV3ColorSensor colorSensor = new EV3ColorSensor(SensorPort.S4);
-        SampleProvider light = colorSensor.getRGBMode();
+        SampleProvider light = colorSensor.getRedMode();
         float[] sample = new float[light.sampleSize()];
 
-        // Basic setup
-        int baseSpeed = 250; // Base speed for both motors
-        int maxSpeed = 600;
-        int minSpeed = 100;
-        // PID control constants
-        float Kp = 600; // Proportional gain
-        float Ki = 0; // Integral gain
-        float Kd = 150; // Derivative gain
+        // Motor setup
+        int baseSpeed = 300;
+        int turnSpeed = 150;
+        Motor.A.setSpeed(baseSpeed);
+        Motor.B.setSpeed(baseSpeed);
+        Motor.A.forward();
+        Motor.B.forward();
 
-        float target = 0.2f; // Target reflectance (tune based on your line color)
-        float integral = 0;
-        float lastError = 0;
-
-        LCD.drawString("Line Follower PID", 0, 0);
-        Delay.msDelay(1000);
+        // Threshold for black line detection (tune this value based on testing)
+        float threshold = 0.2f;
 
         // Main loop
         while (!Button.ESCAPE.isDown()) {
-
             // Read sensor value
             light.fetchSample(sample, 0);
             float lightValue = sample[0];
 
-            // Calculate PID components
-            float error = lightValue - target;
-            integral += error;
-            float derivative = error - lastError;
-            float correction = Kp * error + Ki * integral + Kd * derivative;
+            // Display light intensity for debugging
+            LCD.clear();
+            LCD.drawString("Light: " + (int)(lightValue * 100) + "%", 0, 0);
 
-            lastError = error;
+            if (lightValue < threshold) {
+                // ON the black line -> go forward
+                Motor.A.setSpeed(baseSpeed);
+                Motor.B.setSpeed(baseSpeed);
+            } else {
+                // OFF the line -> adjust
+                // Simple logic: turn slightly right to search for the line
+                Motor.A.setSpeed(turnSpeed);  // Slow left motor
+                Motor.B.setSpeed(baseSpeed);  // Fast right motor
+            }
 
-            // Calculate motor speeds using differential drive
-            int leftSpeed = (int) (baseSpeed + correction);
-            int rightSpeed = (int) (baseSpeed - correction);
-
-            // Clamp speeds to motor limits
-            leftSpeed = Math.max(minSpeed, Math.min(maxSpeed, leftSpeed));
-            rightSpeed = Math.max(minSpeed, Math.min(maxSpeed, rightSpeed));
-
-            // Set speeds and direction
-            Motor.A.setSpeed(leftSpeed);
-            Motor.B.setSpeed(rightSpeed);
+            // Apply forward motion with updated speeds
             Motor.A.forward();
             Motor.B.forward();
 
-            // Display debug info
-            LCD.clear();
-            LCD.drawString("Light: " + (int) (lightValue * 100) + "%", 0, 1);
-            LCD.drawString("L: " + leftSpeed + " R: " + rightSpeed, 0, 2);
-
+            // Small delay to stabilize updates
             Delay.msDelay(50);
         }
 
-        // Stop the robot
-        Motor.A.stop();
+        // Stop motors and close sensor on exit
+        Motor.A.stop(true);
         Motor.B.stop();
         colorSensor.close();
     }
