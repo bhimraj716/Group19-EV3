@@ -11,21 +11,30 @@ import lejos.utility.Delay;
 public class LineFollower {
 
     public static void main(String[] args) {
-        // Initialize color sensor on port S4 in red mode
+
+        // Initialize color sensor on port S4 using reflected red light
         EV3ColorSensor colorSensor = new EV3ColorSensor(SensorPort.S4);
-        SampleProvider light = colorSensor.getRedMode();
+        SampleProvider light = colorSensor.getRedMode();  // or getRGBMode() if needed
         float[] sample = new float[light.sampleSize()];
 
-        // Motor setup
-        int baseSpeed = 300;
-        int turnSpeed = 150;
-        Motor.A.setSpeed(baseSpeed);
-        Motor.B.setSpeed(baseSpeed);
-        Motor.A.forward();
-        Motor.B.forward();
+        // Motor speed settings
+        int baseSpeed = 250;
+        int maxSpeed = 600;
+        int minSpeed = 100;
 
-        // Threshold for black line detection (tune this value based on testing)
-        float threshold = 0.2f;
+        // PID control constants (tune for your robot)
+        float Kp = 600;
+        float Ki = 0;
+        float Kd = 150;
+
+        // Target reflectance value (black line should be near 0.2 or lower)
+        float target = 0.2f;
+        float integral = 0;
+        float lastError = 0;
+
+        // Display title
+        LCD.drawString("PID Line Follower", 0, 0);
+        Delay.msDelay(1000);
 
         // Main loop
         while (!Button.ESCAPE.isDown()) {
@@ -33,31 +42,37 @@ public class LineFollower {
             light.fetchSample(sample, 0);
             float lightValue = sample[0];
 
-            // Display light intensity for debugging
-            LCD.clear();
-            LCD.drawString("Light: " + (int)(lightValue * 100) + "%", 0, 0);
+            // PID calculation
+            float error = lightValue - target;
+            integral += error;
+            float derivative = error - lastError;
+            float correction = Kp * error + Ki * integral + Kd * derivative;
+            lastError = error;
 
-            if (lightValue < threshold) {
-                // ON the black line -> go forward
-                Motor.A.setSpeed(baseSpeed);
-                Motor.B.setSpeed(baseSpeed);
-            } else {
-                // OFF the line -> adjust
-                // Simple logic: turn slightly right to search for the line
-                Motor.A.setSpeed(turnSpeed);  // Slow left motor
-                Motor.B.setSpeed(baseSpeed);  // Fast right motor
-            }
+            // Compute motor speeds
+            int leftSpeed = (int) (baseSpeed + correction);
+            int rightSpeed = (int) (baseSpeed - correction);
 
-            // Apply forward motion with updated speeds
+            // Clamp motor speeds
+            leftSpeed = Math.max(minSpeed, Math.min(maxSpeed, leftSpeed));
+            rightSpeed = Math.max(minSpeed, Math.min(maxSpeed, rightSpeed));
+
+            // Set motor speeds and move forward
+            Motor.A.setSpeed(leftSpeed);
+            Motor.B.setSpeed(rightSpeed);
             Motor.A.forward();
             Motor.B.forward();
 
-            // Small delay to stabilize updates
+            // Debug display
+            LCD.clear();
+            LCD.drawString("Light: " + (int)(lightValue * 100) + "%", 0, 1);
+            LCD.drawString("L:" + leftSpeed + " R:" + rightSpeed, 0, 2);
+
             Delay.msDelay(50);
         }
 
-        // Stop motors and close sensor on exit
-        Motor.A.stop(true);
+        // Stop and cleanup
+        Motor.A.stop();
         Motor.B.stop();
         colorSensor.close();
     }
