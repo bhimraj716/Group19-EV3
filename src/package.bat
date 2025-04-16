@@ -1,1 +1,1 @@
-"C:\Program Files\Java\jdk1.7.0_80\bin\jar" -cfe spin.jar Motorspin.TestMotors ..\lib\ev3classes.jar .\Motorspin
+"C:\Program Files\Java\jdk1.7.0_80\bin\jar" -cfe line.jar linefollower.LineFollower ..\lib\ev3classes.jar .\linefollower
