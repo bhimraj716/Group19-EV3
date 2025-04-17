@@ -1,9 +1,9 @@
 package lightsensor;
 
-import lejos.hardware.Button;
-import lejos.hardware.lcd.LCD;
-import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.port.SensorPort;
+import lejos.hardware.lcd.LCD;
+import lejos.hardware.Button;
 import lejos.robotics.SampleProvider;
 
 public class LightSensor
