@@ -11,72 +11,57 @@ public class UltrasonicSensor {
 
     public static void main(String[] args) {
 
-        // Initialize the ultrasonic sensor on port 2
         EV3UltrasonicSensor usSensor = new EV3UltrasonicSensor(SensorPort.S2);
         SampleProvider distance = usSensor.getDistanceMode();
         float[] sample = new float[distance.sampleSize()];
 
-        // Wait for a button press to start
+        // PID constants
+        float Kp = 800; // Proportional gain
+        float Ki = 0;   // (Optional) Integral gain
+        float Kd = 300; // Derivative gain
+
+        float targetDistance = 0.25f; // desired distance from the object
+        float error, previousError = 0, integral = 0, derivative, correction;
+
         LCD.drawString("Press any button", 0, 0);
         Button.waitForAnyPress();
         LCD.clear();
 
-        // Move forward at full speed
+        Motor.B.setSpeed(300);
+        Motor.C.setSpeed(300);
         Motor.B.forward();
         Motor.C.forward();
 
-        while (true) {
+        while (!Button.ESCAPE.isDown()) {
             distance.fetchSample(sample, 0);
             float dist = sample[0]; // distance in meters
 
-            // Display distance
             LCD.clear();
-            LCD.drawString("Distance: " + dist + " m", 0, 0);
+            LCD.drawString("Distance: " + dist, 0, 0);
 
-            // If an obstacle is detected within 0.3 meters
-            if (dist < 0.3) {
-                // Slow down
-                Motor.B.setSpeed(100);  // Lower speed
-                Motor.C.setSpeed(100);
-                Motor.B.forward();
-                Motor.C.forward();
+            // PID calculations
+            error = targetDistance - dist;
+            integral += error;
+            derivative = error - previousError;
 
-                // If the object is very close (e.g., 0.15m), stop and return
-                if (dist < 0.15) {
-                    Motor.B.stop(true);
-                    Motor.C.stop();
+            correction = (Kp * error) + (Ki * integral) + (Kd * derivative);
 
-                    // Wait a moment
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+            previousError = error;
 
-                    // Reverse back to starting point
-                    Motor.B.setSpeed(300);
-                    Motor.C.setSpeed(300);
-                    Motor.B.backward();
-                    Motor.C.backward();
+            // Adjust motor speeds based on correction
+            int baseSpeed = 300;
+            int leftSpeed = (int)(baseSpeed + correction);
+            int rightSpeed = (int)(baseSpeed - correction);
 
-                    // Move backward for 2 seconds (approx same distance)
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+            // Clamp speeds to avoid errors
+            leftSpeed = Math.max(100, Math.min(600, leftSpeed));
+            rightSpeed = Math.max(100, Math.min(600, rightSpeed));
 
-                    Motor.B.stop(true);
-                    Motor.C.stop();
-                    break;
-                }
-            } else {
-                // Move forward at normal speed
-                Motor.B.setSpeed(400);
-                Motor.C.setSpeed(400);
-                Motor.B.forward();
-                Motor.C.forward();
-            }
+            Motor.B.setSpeed(leftSpeed);
+            Motor.C.setSpeed(rightSpeed);
+
+            Motor.B.forward();
+            Motor.C.forward();
 
             try {
                 Thread.sleep(100);
@@ -85,6 +70,8 @@ public class UltrasonicSensor {
             }
         }
 
+        Motor.B.stop(true);
+        Motor.C.stop();
         usSensor.close();
         LCD.clear();
         LCD.drawString("Task Finished", 0, 0);
